@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Малый-большой-равный</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--tg-theme-bg-color, #1a1a2e);
+            color: var(--tg-theme-text-color, #fff);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+        #app { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+        /* Start Screen */
+        .start-screen { text-align: center; }
+        .game-title {
+            font-size: 28px; font-weight: 800;
+            margin: 20px 0 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .game-subtitle { font-size: 14px; opacity: 0.6; margin-bottom: 20px; }
+        .balance-badge {
+            display: inline-block;
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+        .rules-container { text-align: left; margin-bottom: 24px; }
+        .rule-card {
+            background: var(--tg-theme-secondary-bg-color, #16213e);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .rule-card-title { font-weight: 700; margin-bottom: 4px; font-size: 13px; }
+        .rule-example {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 2px 3px;
+        }
+        .even { background: rgba(100, 149, 237, 0.25); color: #6495ed; }
+        .odd { background: rgba(255, 215, 0, 0.2); color: #ffd700; }
+        .how-to {
+            background: var(--tg-theme-secondary-bg-color, #16213e);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .how-to-title { font-weight: 700; margin-bottom: 8px; }
+        .mode-buttons { display: flex; flex-direction: column; gap: 10px; }
+        .btn {
+            border: none;
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary {
+            background: var(--tg-theme-button-color, #667eea);
+            color: var(--tg-theme-button-text-color, #fff);
+        }
+        .btn-secondary {
+            background: var(--tg-theme-secondary-bg-color, #16213e);
+            color: var(--tg-theme-text-color, #fff);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+        }
+        .btn-num {
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            font-size: 28px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-num.even {
+            background: rgba(100, 149, 237, 0.2);
+            border: 2px solid #6495ed;
+            color: #6495ed;
+        }
+        .btn-num.odd {
+            background: rgba(255, 215, 0, 0.15);
+            border: 2px solid #ffd700;
+            color: #ffd700;
+        }
+        .btn-num:active { transform: scale(0.9); }
+        .btn-num.selected {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Game Screen */
+        .game-screen { display: none; }
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .player-card {
+            background: var(--tg-theme-secondary-bg-color, #16213e);
+            border-radius: 12px;
+            padding: 10px 14px;
+            flex: 1;
+            text-align: center;
+        }
+        .player-name { font-size: 14px; font-weight: 700; }
+        .player-score { font-size: 32px; font-weight: 800; }
+        .vs { padding: 0 12px; font-size: 14px; opacity: 0.4; font-weight: 700; }
+        .round-info { text-align: center; font-size: 13px; opacity: 0.6; margin-bottom: 12px; }
+        .battle-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin: 20px 0;
+            min-height: 120px;
+        }
+        .choice-display {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 800;
+            transition: all 0.3s;
+        }
+        .choice-display.even { border: 3px solid #6495ed; color: #6495ed; background: rgba(100,149,237,0.1); }
+        .choice-display.odd { border: 3px solid #ffd700; color: #ffd700; background: rgba(255,215,0,0.1); }
+        .choice-display.empty { border: 2px dashed rgba(255,255,255,0.2); color: rgba(255,255,255,0.15); font-size: 14px; }
+        .result-text {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            margin: 8px 0 16px;
+            min-height: 28px;
+        }
+        .result-win { color: #4ade80; }
+        .result-lose { color: #f87171; }
+        .result-draw { color: #94a3b8; }
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            justify-items: center;
+            margin-top: 16px;
+        }
+        .history {
+            margin-top: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .history-title { font-size: 12px; opacity: 0.5; margin-bottom: 6px; text-align: center; }
+        .history-item {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            padding: 4px;
+            opacity: 0.7;
+        }
+
+        /* Pass Screen */
+        .pass-screen { display: none; text-align: center; }
+        .pass-icon { font-size: 60px; margin: 40px 0 16px; }
+        .pass-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+        .pass-text { font-size: 14px; opacity: 0.6; margin-bottom: 24px; }
+        .pass-name { color: #667eea; font-weight: 700; }
+
+        /* Animations */
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop { animation: pop 0.4s ease-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .animate-shake { animation: shake 0.3s; }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--tg-theme-text-color, #fff);
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.5;
+            padding: 4px;
+        }
+        .back-btn:active { opacity: 1; }
+        .top-bar { display: flex; align-items: center; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <!-- Start Screen -->
+    <div class="start-screen" id="startScreen">
+        <div class="game-title">Малый-большой-равный</div>
+        <div class="game-subtitle">Раз, два, три!</div>
+        <div class="balance-badge">⚖️ У каждого числа 50% побед</div>
+
+        <div class="rules-container">
+            <div class="rule-card">
+                <div class="rule-card-title">1. Маленькое бьёт большое</div>
+                <span class="rule-example even">2 > 8</span>
+                <span class="rule-example odd">1 > 9</span>
+            </div>
+            <div class="rule-card">
+                <div class="rule-card-title">2. Большое чёт бьёт маленькое нечёт</div>
+                <span class="rule-example even">8 > 3</span>
+                <span class="rule-example even">6 > 1</span>
+            </div>
+            <div class="rule-card">
+                <div class="rule-card-title">3. Маленькое чёт бьёт большое нечёт</div>
+                <span class="rule-example even">2 > 9</span>
+                <span class="rule-example even">4 > 7</span>
+            </div>
+            <div class="rule-card">
+                <div class="rule-card-title">4. Одинаковый чёт — ничья</div>
+                <span class="rule-example even">2 = 2</span>
+                <span class="rule-example even">8 = 8</span>
+            </div>
+            <div class="rule-card">
+                <div class="rule-card-title">5. Мал. чёт vs мал. нечёт — меньшее побеждает</div>
+                <span class="rule-example odd">1 > 4</span>
+                <span class="rule-example even">2 > 3</span>
+            </div>
+            <div class="rule-card">
+                <div class="rule-card-title">6. Бол. чёт vs бол. нечёт — нечёт побеждает</div>
+                <span class="rule-example odd">9 > 8</span>
+                <span class="rule-example odd">7 > 6</span>
+            </div>
+            <div class="rule-card">
+                <div class="rule-card-title">7. Равный чёт vs равный нечёт — ничья</div>
+                <span class="rule-example even">3</span> = <span class="rule-example odd">3</span>
+                <span class="rule-example even">5</span> = <span class="rule-example odd">5</span>
+            </div>
+            <div class="rule-card">
+                <div class="rule-card-title">8. Исключение: 6 бьёт 9</div>
+                <span class="rule-example even">6 > 9</span>
+            </div>
+        </div>
+
+        <div class="how-to">
+            <div class="how-to-title">📋 Как играть</div>
+            1. Выбираешь число от 1 до 9<br>
+            2. Противник выбирает своё число<br>
+            3. Кто побеждает по правилам — забирает раунд<br>
+            4. У каждого числа 4 победы и 4 поражения — всё честно!
+        </div>
+
+        <div class="mode-buttons">
+            <button class="btn btn-primary" onclick="startBotGame()">🤖 Играть с ботом</button>
+            <button class="btn btn-secondary" onclick="start2PGame()">👥 Играть вдвоём</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="game-screen" id="gameScreen">
+        <div class="top-bar">
+            <button class="back-btn" onclick="goHome()">←</button>
+        </div>
+        <div class="game-header">
+            <div class="player-card">
+                <div class="player-name" id="p1Name">Вы</div>
+                <div class="player-score" id="p1Score">0</div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="player-card">
+                <div class="player-name" id="p2Name">Бот</div>
+                <div class="player-score" id="p2Score">0</div>
+            </div>
+        </div>
+        <div class="round-info" id="roundInfo">Раунд 1</div>
+        <div class="battle-area">
+            <div class="choice-display empty" id="p1Choice">?</div>
+            <div class="choice-display empty" id="p2Choice">?</div>
+        </div>
+        <div class="result-text" id="resultText"></div>
+        <div class="numbers-grid" id="numbersGrid"></div>
+        <div class="history">
+            <div class="history-title">История раундов</div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <!-- Pass Screen -->
+    <div class="pass-screen" id="passScreen">
+        <div class="pass-icon">📱</div>
+        <div class="pass-title">Передай устройство</div>
+        <div class="pass-text">Ход игрока: <span class="pass-name" id="passPlayerName">Игрок 2</span></div>
+        <button class="btn btn-primary" onclick="revealPickScreen()">Готов!</button>
+    </div>
+</div>
+
+<script>
+// Telegram Web App
+const tg = window.Telegram?.WebApp;
+if (tg) {
+    tg.ready();
+    tg.expand();
+}
+
+const playerName = tg?.initDataUnsafe?.user?.first_name || 'Вы';
+
+// Game state
+let gameState = {
+    mode: 'bot',
+    currentPlayer: 1,
+    p1Choice: null,
+    p2Choice: null,
+    p1Score: 0,
+    p2Score: 0,
+    round: 1,
+    history: [],
+    botLevel: 'medium',
+    lastWinner: null
+};
+
+// Win matrix: winner[a][b] = true if a beats b
+const winMatrix = {};
+
+function isEven(n) { return n % 2 === 0; }
+function isSmall(n) { return n <= 5; }
+
+function beats(a, b) {
+    if (a === b) return 'draw';
+    const aE = isEven(a), bE = isEven(b);
+    const aS = isSmall(a), bS = isSmall(b);
+
+    // Rule 1: Small beats big
+    if (aS && !bS) return true;
+    if (!aS && bS) return false;
+
+    // Rule 8: Exception 6 beats 9
+    if (a === 6 && b === 9) return true;
+    if (a === 9 && b === 6) return false;
+
+    // Same size zone
+    if (aS && bS) {
+        // Rule 4: Same even = draw (handled by a===b)
+        // Rule 7: Equal even vs equal odd = draw
+        if (!aE && !bE) return 'draw'; // both odd, same size = draw
+
+        // Rule 5: Small even vs small odd — smaller wins
+        if (aE !== bE) {
+            if (a < b) return true;
+            return false;
+        }
+        // Both even, same size, not equal — can't happen (2,4 only)
+        // Both odd, same size — draw handled above
+        return 'draw';
+    }
+
+    // Both big
+    if (!aS && !bS) {
+        // Rule 4: Same even = draw
+        // Rule 7: equal odd vs equal odd = draw (both odd)
+        if (!aE && !bE) return 'draw'; // both odd
+        // Rule 6: Big even vs big odd — odd wins
+        if (aE !== bE) {
+            if (!aE) return true; // a is odd
+            return false; // a is even
+        }
+        return 'draw';
+    }
+    return 'draw';
+}
+
+// Build win matrix
+for (let a = 1; a <= 9; a++) {
+    winMatrix[a] = {};
+    for (let b = 1; b <= 9; b++) {
+        if (a === b) {
+            winMatrix[a][b] = 'draw';
+        } else {
+            const r = beats(a, b);
+            winMatrix[a][b] = (r === true) ? 'win' : (r === false ? 'lose' : 'draw');
+        }
+    }
+}
+
+// Verify balance
+function checkBalance() {
+    for (let n = 1; n <= 9; n++) {
+        let wins = 0, losses = 0, draws = 0;
+        for (let o = 1; o <= 9; o++) {
+            if (n === o) { draws++; continue; }
+            if (winMatrix[n][o] === 'win') wins++;
+            else if (winMatrix[n][o] === 'lose') losses++;
+            else draws++;
+        }
+        console.log(`Number ${n}: ${wins}W ${losses}L ${draws}D`);
+    }
+}
+checkBalance();
+
+function startBotGame() {
+    gameState.mode = 'bot';
+    gameState.currentPlayer = 1;
+    gameState.p1Choice = null;
+    gameState.p2Choice = null;
+    gameState.p1Score = 0;
+    gameState.p2Score = 0;
+    gameState.round = 1;
+    gameState.history = [];
+    document.getElementById('p1Name').textContent = playerName;
+    document.getElementById('p2Name').textContent = 'Бот';
+    showScreen('gameScreen');
+    renderGame();
+}
+
+function start2PGame() {
+    gameState.mode = '2p';
+    gameState.currentPlayer = 1;
+    gameState.p1Choice = null;
+    gameState.p2Choice = null;
+    gameState.p1Score = 0;
+    gameState.p2Score = 0;
+    gameState.round = 1;
+    gameState.history = [];
+    document.getElementById('p1Name').textContent = 'Игрок 1';
+    document.getElementById('p2Name').textContent = 'Игрок 2';
+    showScreen('gameScreen');
+    renderGame();
+}
+
+function showScreen(id) {
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('passScreen').style.display = 'none';
+    document.getElementById(id).style.display = id === 'startScreen' ? 'block' : 'block';
+}
+
+function renderGame() {
+    document.getElementById('p1Score').textContent = gameState.p1Score;
+    document.getElementById('p2Score').textContent = gameState.p2Score;
+    document.getElementById('roundInfo').textContent = `Раунд ${gameState.round}`;
+    document.getElementById('resultText').textContent = '';
+    document.getElementById('resultText').className = 'result-text';
+
+    const p1El = document.getElementById('p1Choice');
+    const p2El = document.getElementById('p2Choice');
+
+    p1El.className = 'choice-display empty';
+    p1El.textContent = '?';
+    p2El.className = 'choice-display empty';
+    p2El.textContent = '?';
+
+    // Show numbers
+    const grid = document.getElementById('numbersGrid');
+    grid.innerHTML = '';
+    for (let n = 1; n <= 9; n++) {
+        const btn = document.createElement('button');
+        btn.className = `btn btn-num ${isEven(n) ? 'even' : 'odd'}`;
+        btn.textContent = n;
+        btn.onclick = () => selectNumber(n);
+        grid.appendChild(btn);
+    }
+
+    renderHistory();
+}
+
+function selectNumber(n) {
+    if (gameState.mode === 'bot') {
+        // Player choice
+        gameState.p1Choice = n;
+        const p1El = document.getElementById('p1Choice');
+        p1El.className = `choice-display ${isEven(n) ? 'even' : 'odd'} animate-pop`;
+        p1El.textContent = n;
+
+        // Bot choice
+        const botNum = getBotMove(n);
+        gameState.p2Choice = botNum;
+
+        setTimeout(() => {
+            const p2El = document.getElementById('p2Choice');
+            p2El.className = `choice-display ${isEven(botNum) ? 'even' : 'odd'} animate-pop`;
+            p2El.textContent = botNum;
+
+            resolveRound();
+        }, 600);
+    } else {
+        // 2P mode
+        if (gameState.currentPlayer === 1) {
+            gameState.p1Choice = n;
+            // Show pass screen
+            document.getElementById('passPlayerName').textContent = 'Игрок 2';
+            showScreen('passScreen');
+        } else {
+            gameState.p2Choice = n;
+            const p1El = document.getElementById('p1Choice');
+            p1El.className = `choice-display ${isEven(gameState.p1Choice) ? 'even' : 'odd'} animate-pop`;
+            p1El.textContent = gameState.p1Choice;
+
+            const p2El = document.getElementById('p2Choice');
+            p2El.className = `choice-display ${isEven(n) ? 'even' : 'odd'} animate-pop`;
+            p2El.textContent = n;
+
+            resolveRound();
+        }
+    }
+}
+
+function revealPickScreen() {
+    showScreen('gameScreen');
+    gameState.currentPlayer = 2;
+
+    // Hide P1 choice
+    const p1El = document.getElementById('p1Choice');
+    p1El.className = 'choice-display empty';
+    p1El.textContent = '✓';
+
+    // Show whose turn
+    document.getElementById('roundInfo').textContent = `Раунд ${gameState.round} — Игрок 2`;
+}
+
+function getBotMove(playerNum) {
+    const level = gameState.botLevel;
+    const nums = [1,2,3,4,5,6,7,8,9];
+
+    if (level === 'easy') {
+        return nums[Math.floor(Math.random() * 9)];
+    }
+
+    if (level === 'medium') {
+        // Counter the last winning move
+        if (gameState.history.length > 0) {
+            const last = gameState.history[gameState.history.length - 1];
+            // Find numbers that beat the player's last move
+            const counters = nums.filter(n => winMatrix[n][last.p1] === 'win');
+            if (counters.length > 0 && Math.random() > 0.3) {
+                return counters[Math.floor(Math.random() * counters.length)];
+            }
+        }
+        return nums[Math.floor(Math.random() * 9)];
+    }
+
+    // Hard: track frequency
+    if (gameState.history.length >= 3) {
+        const freq = {};
+        nums.forEach(n => freq[n] = 0);
+        gameState.history.forEach(h => freq[h.p1]++);
+        // Find player's most used number
+        let maxFreq = 0, mostUsed = 1;
+        nums.forEach(n => { if (freq[n] > maxFreq) { maxFreq = freq[n]; mostUsed = n; } });
+        // Counter it
+        const counters = nums.filter(n => winMatrix[n][mostUsed] === 'win');
+        if (counters.length > 0 && Math.random() > 0.2) {
+            return counters[Math.floor(Math.random() * counters.length)];
+        }
+    }
+    return nums[Math.floor(Math.random() * 9)];
+}
+
+function resolveRound() {
+    const a = gameState.p1Choice;
+    const b = gameState.p2Choice;
+    const result = winMatrix[a][b];
+
+    const resultEl = document.getElementById('resultText');
+
+    let winner = null;
+    if (result === 'win') {
+        gameState.p1Score++;
+        winner = 1;
+        resultEl.textContent = `${a} бьёт ${b}! Победа!`;
+        resultEl.className = 'result-text result-win';
+    } else if (result === 'lose') {
+        gameState.p2Score++;
+        winner = 2;
+        resultEl.textContent = `${b} бьёт ${a}! Поражение`;
+        resultEl.className = 'result-text result-lose';
+    } else {
+        resultEl.textContent = `${a} = ${b} — Ничья!`;
+        resultEl.className = 'result-text result-draw';
+    }
+
+    gameState.history.push({ round: gameState.round, p1: a, p2: b, winner });
+    document.getElementById('p1Score').textContent = gameState.p1Score;
+    document.getElementById('p2Score').textContent = gameState.p2Score;
+    renderHistory();
+
+    // Next round
+    setTimeout(() => {
+        gameState.round++;
+        gameState.p1Choice = null;
+        gameState.p2Choice = null;
+        gameState.currentPlayer = 1;
+        renderGame();
+    }, 2500);
+}
+
+function renderHistory() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    gameState.history.slice(-5).reverse().forEach(h => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        let icon = '🤝';
+        if (h.winner === 1) icon = '✅';
+        else if (h.winner === 2) icon = '❌';
+        item.innerHTML = `<span class="${isEven(h.p1) ? 'even' : 'odd'}" style="padding:2px 6px;border-radius:4px;font-weight:600">${h.p1}</span> vs <span class="${isEven(h.p2) ? 'even' : 'odd'}" style="padding:2px 6px;border-radius:4px;font-weight:600">${h.p2}</span> ${icon}`;
+        list.appendChild(item);
+    });
+}
+
+function goHome() {
+    showScreen('startScreen');
+}
+</script>
+</body>
+</html>
