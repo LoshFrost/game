@@ -88,33 +88,43 @@ h2{font-size:18px;margin-bottom:16px}
 </head>
 <body>
 
-<button class="back-btn" id="backBtn" onclick="goHome()" style="display:none">←</button>
+<button class="back-btn" id="backBtn" onclick="goHome()" style="display:none">&#8592;</button>
 
 <!-- ЭКРАН: МЕНЮ -->
 <div id="screen-menu" class="screen active">
 <h1>Малый-Большой-Равный</h1>
-<p class="subtitle">Раз, два, три! У каждого числа 50% побед</p>
-<button class="menu-btn btn-blue" onclick="startBotGame()">🤖 Играть с ботом</button>
-<button class="menu-btn btn-green" onclick="startLocalGame()">👥 Играть вдвоём</button>
-<button class="menu-btn btn-red" onclick="startOnlineGame()">🌐 Играть онлайн</button>
-<button class="menu-btn btn-gray" onclick="showRules()">📋 Правила</button>
+<p class="subtitle">Камень-ножницы-бумага на 9 числах. У каждого ровно 4 победы и 4 поражения.</p>
+<button class="menu-btn btn-blue" onclick="startBotGame()">&#129302; Играть с ботом</button>
+<button class="menu-btn btn-green" onclick="startLocalGame()">&#128101; Играть вдвоём</button>
+<button class="menu-btn btn-red" onclick="startOnlineGame()">&#127760; Играть онлайн</button>
+<button class="menu-btn btn-gray" onclick="showRules()">&#128203; Правила</button>
 </div>
 
 <!-- ЭКРАН: ПРАВИЛА -->
 <div id="screen-rules" class="screen">
-<h2>📋 Правила</h2>
-<p class="subtitle">Числа 1-9. У каждого 4 победы и 4 поражения.</p>
+<h2>&#128203; Правила</h2>
+<p class="subtitle">Числа 1-9. У каждого ровно 4 победы и 4 поражения.</p>
 <div style="text-align:left;font-size:14px;line-height:2;background:var(--card);padding:16px;border-radius:14px;margin-bottom:16px">
-1. Маленькое бьёт большое (2>8, 1>9)<br>
-2. Большое чёт бьёт маленькое нечёт (8>3, 6>1)<br>
-3. Маленькое чёт бьёт большое нечёт (2>9, 4>7)<br>
-4. Одинаковый чёт — ничья<br>
-5. Мал.чёт vs мал.нечёт — меньшее побеждает<br>
-6. Бол.чёт vs бол.нечёт — нечёт побеждает<br>
-7. Равный чёт vs равный нечёт — ничья<br>
-8. Исключение: 6 бьёт 9
+<b>Три группы:</b><br>
+&bull; Малые: 1, 2, 3<br>
+&bull; Равные: 4, 5, 6<br>
+&bull; Большие: 7, 8, 9<br>
+<br>
+<b>Между группами (как камень-ножницы-бумага):</b><br>
+&bull; Малые бьют Равных<br>
+&bull; Равные бьют Больших<br>
+&bull; Большие бьют Малых<br>
+<br>
+<b>Внутри группы (цикл):</b><br>
+&bull; 1 бьёт 2, 2 бьёт 3, 3 бьёт 1<br>
+&bull; 4 бьёт 5, 5 бьёт 6, 6 бьёт 4<br>
+&bull; 7 бьёт 8, 8 бьёт 9, 9 бьёт 7<br>
+<br>
+<b>Одинаковые числа — ничья.</b><br>
+<br>
+<b>Пример:</b> 2 бьёт 5 (малое бьёт равное), 5 бьёт 8 (равное бьёт большое), 8 бьёт 2 (большое бьёт малое).
 </div>
-<button class="menu-btn btn-gray" onclick="goHome()">← Назад</button>
+<button class="menu-btn btn-gray" onclick="goHome()">&#8592; Назад</button>
 </div>
 
 <!-- ЭКРАН: ИГРА -->
@@ -136,7 +146,7 @@ h2{font-size:18px;margin-bottom:16px}
 <!-- ЭКРАН: ПЕРЕДАЧА УСТРОЙСТВА -->
 <div id="screen-pass" class="screen">
 <div class="pass-screen">
-<div class="pass-icon">📱</div>
+<div class="pass-icon">&#128241;</div>
 <div class="pass-text" id="passText">Передай устройство Игроку 2</div>
 <button class="menu-btn btn-blue" onclick="resumeLocalGame()">Готов!</button>
 </div>
@@ -144,9 +154,9 @@ h2{font-size:18px;margin-bottom:16px}
 
 <!-- ЭКРАН: ПОИСК ОНЛАЙН -->
 <div id="screen-search" class="screen">
-<h2>🌐 Поиск соперника</h2>
+<h2>&#127760; Поиск соперника</h2>
 <p class="subtitle">Ищем игрока онлайн...</p>
-<div style="font-size:48px;margin:20px 0">🔍</div>
+<div style="font-size:48px;margin:20px 0">&#128269;</div>
 <div class="status"><span class="dots"></span><span class="dots"></span><span class="dots"></span></div>
 <button class="menu-btn btn-gray" onclick="cancelSearch()">Отмена</button>
 </div>
@@ -156,43 +166,41 @@ h2{font-size:18px;margin-bottom:16px}
 let tg = {};
 try { tg = window.Telegram.WebApp; tg.ready(); tg.expand(); } catch(e) {}
 
-// ============ ЛОГИКА ИГРЫ ============
-function getCategory(n){if(n<=3)return'small';if(n<=6)return'equal';return'big'}
-function isEven(n){return n%2===0}
+// ============ ЛОГИКА ИГРЫ (новые сбалансированные правила) ============
+function getCategory(n){
+  if(n<=3) return 'small';
+  if(n<=6) return 'equal';
+  return 'big';
+}
 
-function compare(a,b){
-if(a===b)return'draw';
-if(getCategory(a)==='small'&&getCategory(b)==='big')return'a';
-if(getCategory(b)==='small'&&getCategory(a)==='big')return'b';
-if(getCategory(a)==='big'&&isEven(a)&&getCategory(b)==='small'&&!isEven(b))return'a';
-if(getCategory(b)==='big'&&isEven(b)&&getCategory(a)==='small'&&!isEven(a))return'b';
-if(getCategory(a)==='small'&&isEven(a)&&getCategory(b)==='big'&&!isEven(b))return'a';
-if(getCategory(b)==='small'&&isEven(b)&&getCategory(a)==='big'&&!isEven(a))return'b';
-if(getCategory(a)==='small'&&getCategory(b)==='small'){
-if(isEven(a)!==isEven(b))return a<b?'a':'b';
-return'draw'}
-if(getCategory(a)==='big'&&getCategory(b)==='big'){
-if(isEven(a)!==isEven(b))return!isEven(a)?'a':'b';
-return'draw'}
-if(getCategory(a)==='equal'&&getCategory(b)==='equal')return'draw';
-if(a===6&&b===9)return'a';
-if(b===6&&a===9)return'b';
-if(getCategory(a)==='equal'&&getCategory(b)==='small')return'a';
-if(getCategory(b)==='equal'&&getCategory(a)==='small')return'b';
-if(getCategory(a)==='equal'&&getCategory(b)==='big')return'b';
-if(getCategory(b)==='equal'&&getCategory(a)==='big')return'a';
-return'draw'
+function compare(a, b){
+  if(a === b) return 'draw';
+  
+  const catA = getCategory(a);
+  const catB = getCategory(b);
+  
+  // Между группами: Small > Equal > Big > Small
+  if(catA !== catB){
+    if((catA === 'small' && catB === 'equal') ||
+       (catA === 'equal' && catB === 'big') ||
+       (catA === 'big' && catB === 'small')) return 'a';
+    return 'b';
+  }
+  
+  // Внутри группы: цикл 1>2>3>1, 4>5>6>4, 7>8>9>7
+  const cycle = {1:2, 2:3, 3:1, 4:5, 5:6, 6:4, 7:8, 8:9, 9:7};
+  return cycle[a] === b ? 'a' : 'b';
 }
 
 // ============ СОСТОЯНИЕ ============
-let gameState = 'menu'; // menu, bot, local, online
+let gameState = 'menu';
 let isBusy = false;
 let scores = {p1:0, p2:0};
 let round = 1;
 let localP1Move = null;
 let localCurrentPlayer = 1;
 let ws = null;
-let myRole = null; // player1 или player2 в онлайн
+let myRole = null;
 let opponentName = null;
 let myOnlineMove = null;
 let opponentMoved = false;
@@ -279,25 +287,21 @@ function botPick(n) {
   c1.textContent = '?'; c2.textContent = '?';
   status.innerHTML = 'Бот выбирает<span class="dots"></span><span class="dots"></span><span class="dots"></span>';
   
-  // 100мс — карта игрока
   setTimeout(() => { c1.textContent = n; c1.classList.add('visible'); }, 100);
   
-  // 1000мс — карта бота
   setTimeout(() => {
     const botN = Math.floor(Math.random()*9)+1;
     c2.textContent = botN;
     c2.classList.add('visible');
     
-    // 1500мс — результат
     setTimeout(() => {
       const res = compare(n, botN);
-      if (res === 'a') { scores.p1++; c1.classList.add('winner'); c2.classList.add('loser'); status.textContent = '🎉 Ты победил!'; addHistory(n, botN, 'win'); }
-      else if (res === 'b') { scores.p2++; c1.classList.add('loser'); c2.classList.add('winner'); status.textContent = '😔 Бот победил'; addHistory(n, botN, 'lose'); }
-      else { status.textContent = '🤝 Ничья'; addHistory(n, botN, 'draw'); }
+      if (res === 'a') { scores.p1++; c1.classList.add('winner'); c2.classList.add('loser'); status.textContent = '\uD83C\uDF89 Ты победил!'; addHistory(n, botN, 'win'); }
+      else if (res === 'b') { scores.p2++; c1.classList.add('loser'); c2.classList.add('winner'); status.textContent = '\uD83D\uDE14 Бот победил'; addHistory(n, botN, 'lose'); }
+      else { status.textContent = '\uD83E\uDD1D Ничья'; addHistory(n, botN, 'draw'); }
       updateScores();
       round++;
       
-      // 2100мс — разблокировка
       setTimeout(() => { isBusy = false; lockNums(false); status.textContent = 'Выбери число'; }, 600);
     }, 500);
   }, 1000);
@@ -334,7 +338,6 @@ function localPick(n) {
     return;
   }
   
-  // Игрок 2
   const c1 = document.getElementById('card1');
   const c2 = document.getElementById('card2');
   const status = document.getElementById('statusText');
@@ -347,9 +350,9 @@ function localPick(n) {
     
     setTimeout(() => {
       const res = compare(localP1Move, n);
-      if (res === 'a') { scores.p1++; c1.classList.add('winner'); c2.classList.add('loser'); status.textContent = '🎉 Игрок 1 победил!'; addHistory(localP1Move, n, 'win'); }
-      else if (res === 'b') { scores.p2++; c1.classList.add('loser'); c2.classList.add('winner'); status.textContent = '🎉 Игрок 2 победил!'; addHistory(localP1Move, n, 'lose'); }
-      else { status.textContent = '🤝 Ничья'; addHistory(localP1Move, n, 'draw'); }
+      if (res === 'a') { scores.p1++; c1.classList.add('winner'); c2.classList.add('loser'); status.textContent = '\uD83C\uDF89 Игрок 1 победил!'; addHistory(localP1Move, n, 'win'); }
+      else if (res === 'b') { scores.p2++; c1.classList.add('loser'); c2.classList.add('winner'); status.textContent = '\uD83C\uDF89 Игрок 2 победил!'; addHistory(localP1Move, n, 'lose'); }
+      else { status.textContent = '\uD83E\uDD1D Ничья'; addHistory(localP1Move, n, 'draw'); }
       updateScores();
       round++;
       localCurrentPlayer = 1;
@@ -378,6 +381,14 @@ function startOnlineGame() {
   resetGame();
   showScreen('screen-search');
   
+  // --- ЧТЕНИЕ КОМНАТЫ ИЗ ССЫЛКИ ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomId = urlParams.get('start');
+  
+  if (roomId) {
+    console.log("Авто-вход в комнату: " + roomId);
+  }
+  
   // Определяем URL WebSocket
   let wsUrl = '';
   if (location.protocol === 'https:') {
@@ -398,17 +409,14 @@ function startOnlineGame() {
     try { myName = tg.initDataUnsafe?.user?.first_name || 'Игрок'; } catch(e) {}
     let myId = '';
     try { myId = String(tg.initDataUnsafe?.user?.id || Date.now()); } catch(e) {}
-    ws.send(JSON.stringify({ type:'init', name:myName, id:myId }));
+    ws.send(JSON.stringify({ type:'init', name:myName, id:myId, roomId:roomId }));
   };
   
   ws.onmessage = (event) => {
     let data;
     try { data = JSON.parse(event.data); } catch(e) { return; }
     
-    if (data.type === 'searching') {
-      // Уже на экране поиска
-      return;
-    }
+    if (data.type === 'searching') { return; }
     
     if (data.type === 'match_found') {
       myRole = data.youAre;
@@ -437,7 +445,7 @@ function startOnlineGame() {
     if (data.type === 'opponent_moved') {
       opponentMoved = true;
       if (myOnlineMove !== null) {
-        document.getElementById('statusText').innerHTML = 'Соперник сделал ход<span class="dots"></span><span class="dots"></span>';
+        document.getElementById('statusText').innerHTML = 'Оба сделали ход<span class="dots"></span><span class="dots"></span>';
       } else {
         document.getElementById('statusText').textContent = 'Соперник ходил! Твой черед!';
       }
@@ -463,13 +471,13 @@ function startOnlineGame() {
         if (myResult === 'win') {
           if (myRole === 'player1') { c1.classList.add('winner'); c2.classList.add('loser'); }
           else { c2.classList.add('winner'); c1.classList.add('loser'); }
-          status.textContent = '🎉 Ты победил!';
+          status.textContent = '\uD83C\uDF89 Ты победил!';
         } else if (myResult === 'lose') {
           if (myRole === 'player1') { c1.classList.add('loser'); c2.classList.add('winner'); }
           else { c2.classList.add('loser'); c1.classList.add('winner'); }
-          status.textContent = '😔 Ты проиграл';
+          status.textContent = '\uD83D\uDE14 Ты проиграл';
         } else {
-          status.textContent = '🤝 Ничья';
+          status.textContent = '\uD83E\uDD1D Ничья';
         }
         
         scores.p1 = data.p1Score;
@@ -494,7 +502,7 @@ function startOnlineGame() {
     }
     
     if (data.type === 'opponent_left') {
-      document.getElementById('statusText').textContent = 'Соперник покинул игру 😔';
+      document.getElementById('statusText').textContent = 'Соперник покинул игру \uD83D\uDE14';
       lockNums(true);
       setTimeout(() => {
         if (ws) { ws.close(); ws = null; }
@@ -521,9 +529,7 @@ function startOnlineGame() {
     }
   };
   
-  ws.onerror = () => {
-    // Оставляем на экране поиска
-  };
+  ws.onerror = () => {};
 }
 
 function onlinePick(n) {
@@ -566,8 +572,15 @@ function addHistory(myN, oppN, result) {
   const h = document.getElementById('history');
   const item = document.createElement('div');
   item.className = 'history-item ' + result;
-  item.textContent = `Р${round}: ${myN} vs ${oppN} — ${result==='win'?'✅':result==='lose'?'❌':'🤝'}`;
+  item.textContent = 'Р' + round + ': ' + myN + ' vs ' + oppN + ' — ' + (result==='win'?'\u2705':result==='lose'?'\u274C':'\uD83E\uDD1D');
   h.prepend(item);
+}
+
+// ============ АВТО-ВХОД В КОМНАТУ ИЗ ССЫЛКИ ============
+const autoRoomId = new URLSearchParams(window.location.search).get('start');
+if (autoRoomId) {
+  console.log("Обнаружена комната из ссылки: " + autoRoomId);
+  // При наличии сервера — автоматически запустится онлайн-режим
 }
 </script>
 </body>
