@@ -1,0 +1,8 @@
+# Токен бота от @BotFather
+BOT_TOKEN=123456789:ABCdefGhiJklmnOpqrsTuvwXyz
+
+# Порт сервера (Railway/Render задают автоматически)
+PORT=3000
+
+# URL веб-версии (после деплоя укажите свой HTTPS-адрес)
+WEBAPP_URL=https://ваш-домен.onrender.com
